@@ -31,19 +31,22 @@ readArticle a = do
     n <- readString "Bezeichnung" $ fmap articleName a
     p <- readValue  "Preis"       $ fmap articlePrice a
     c <- readValue " Kategorie"   $ fmap articleCategoryId a
-    return $ Article  (-1) n p c
+    let i = if isJust a then articleId $ fromJust a else (-1)
+    return $ Article  i n p c
 
 readCategory :: Maybe Category ->
                 IO Category
 readCategory c = do
     p <- readValue  "Oberkategorie" $ fmap categoryParent c
     n <- readString "Name"          $ fmap categoryName c
-    return $ Category (-1) p n
+    let i = if isJust c then categoryId $ fromJust c else (-1)
+    return $ Category i p n
 
 readShop :: Maybe Shop ->
             IO Shop
 readShop s = do
     n <- readString "Name"  $ fmap shopName s
     c <- readString "Stadt" $ fmap shopCity s
-    return $ Shop (-1) n c
+    let i = if isJust s then shopId $ fromJust s else (-1)
+    return $ Shop i n c
 
