@@ -1,0 +1,3 @@
+cd PATH/cashlog
+cashlog -> sqlite3 -batch -init cashlog.sql cashlog.db
+./cashlog
