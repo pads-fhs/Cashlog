@@ -1,3 +1,7 @@
-cd PATH/cashlog
-cashlog -> sqlite3 -batch -init cashlog.sql cashlog.db
-./cashlog
+Quickstart:
+
+Create an empty database:
+cat cashlog.sql | qlite3 cashlog.db
+
+Run Cashlog:
+./cashlog cashlog.db
