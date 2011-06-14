@@ -6,19 +6,26 @@ import System.Time
 
 import Types
 
-computeNextId :: Connection ->
-                String ->
-                IO Int
-computeNextId con table = do
-    queryResult <- quickQuery' con "SELECT max(id) FROM ?" params
+computeNextPrimaryKey :: Connection
+                      -> String
+                      -> IO Int
+computeNextPrimaryKey con table = do
+    queryResult <- quickQuery' con ("SELECT max(id) FROM " ++ table) []
     return $ (fromSql $ head . head $ queryResult) + 1
-  where params = [ toSql table ]
 
-insertArticle :: Connection -> 
-                 (String, Double, Int) -> 
-                 IO Article
+completePrimaryKey :: Connection
+                   -> String
+                   -> Int
+                   -> IO [Int]
+completePrimaryKey con table id = do
+    queryResult <- quickQuery' con ("SELECT id FROM " ++ table ++ " WHERE id LIKE '" ++ (show id) ++"%'") []
+    return $ map (\(i:[]) -> fromSql i) queryResult
+
+insertArticle :: Connection
+              -> (String, Double, Int)
+              -> IO Article
 insertArticle con (name, price, cat_id) = do
-    id <- computeNextId con "article"
+    id <- computeNextPrimaryKey con "article"
     let params = [ toSql id
                  , toSql name
                  , toSql price
@@ -27,9 +34,9 @@ insertArticle con (name, price, cat_id) = do
     commit con
     return $ Article id name price cat_id
 
-updateArticle :: Connection -> 
-                 Article -> 
-                 IO ()
+updateArticle :: Connection
+              -> Article
+              -> IO ()
 updateArticle con a = do
 	run con "UPDATE article SET name = ?, price = ?, cat_id = ?, WHERE id = ?)" param
 	commit con
@@ -38,16 +45,16 @@ updateArticle con a = do
                 , toSql $ articleCategoryId a
                 , toSql $ articleId a ]
 
-deleteArticle :: Connection -> 
-                  Article -> 
-                  IO ()
+deleteArticle :: Connection
+              -> Article
+              -> IO ()
 deleteArticle con a = do
 	run con "DELETE FROM article WHERE id = ?" param
 	commit con
   where param = [ toSql $ articleId a ]
 
-selectArticles :: Connection -> 
-                  IO [ Article ]
+selectArticles :: Connection
+               -> IO [ Article ]
 selectArticles con = do
     queryResult <- quickQuery' con "SELECT * FROM article" []
     return $ map conv queryResult
@@ -56,11 +63,11 @@ selectArticles con = do
                                     (fromSql p)
                                     (fromSql c)
 
-insertCategory :: Connection -> 
-                  (Int, String) -> 
-                  IO Category
+insertCategory :: Connection
+               -> (Int, String)
+               -> IO Category
 insertCategory con (parent, name) = do
-    id <- computeNextId con "category"
+    id <- computeNextPrimaryKey con "category"
     let params = [ toSql id
                  , toSql parent
                  , toSql name ]
@@ -68,9 +75,9 @@ insertCategory con (parent, name) = do
     commit con
     return $ Category id parent name
 
-updateCategory :: Connection -> 
-                  Category -> 
-                  IO ()
+updateCategory :: Connection
+               -> Category
+               -> IO ()
 updateCategory con c = do
 	run con "UPDATE category SET parent = ?, name = ? WHERE id = ?" param
 	commit con
@@ -78,16 +85,16 @@ updateCategory con c = do
                 , toSql $ categoryName c
                 , toSql $ categoryId c ]
 
-deleteCategory :: Connection ->
-                  Category ->
-                  IO ()
+deleteCategory :: Connection
+               -> Category
+               -> IO ()
 deleteCategory con c = do
     run con "DELETE FROM category WHERE id = ?" param
     commit con
   where param = [ toSql $ categoryId c ]
 
-selectCategories :: Connection ->
-                    IO [ Category ]
+selectCategories :: Connection
+                 -> IO [Category]
 selectCategories con = do
     queryResult <- quickQuery' con "SELECT * FROM category" []
     return $ map conv queryResult
@@ -95,11 +102,11 @@ selectCategories con = do
                                    (fromSql p)
                                    (fromSql n)
 
-insertShop :: Connection ->
-              (String, String) ->
-              IO Shop
+insertShop :: Connection
+           -> (String, String)
+           -> IO Shop
 insertShop con (name, city) = do
-    id <- computeNextId con "shop"
+    id <- computeNextPrimaryKey con "shop"
     let params = [ toSql id
                  , toSql name
                  , toSql city ]
@@ -107,9 +114,9 @@ insertShop con (name, city) = do
     commit con
     return $ Shop id name city 
 
-updateShop :: Connection ->
-              Shop ->
-              IO ()
+updateShop :: Connection
+           -> Shop
+           -> IO ()
 updateShop con s = do
     run con "UPDATE shop SET name = ?, city = ? WHERE id = ?" param
     commit con
@@ -117,16 +124,16 @@ updateShop con s = do
                 , toSql $ shopCity s
                 , toSql $ shopId s ]
 
-deleteShop :: Connection ->
-              Shop ->
-              IO ()
+deleteShop :: Connection
+           -> Shop
+           -> IO ()
 deleteShop con s = do
     run con "DELETE FROM shop WHERE id = ?" param
     commit con
   where param = [ toSql $ shopId s ]
 
-selectShops :: Connection ->
-               IO [ Shop ]
+selectShops :: Connection
+            -> IO [Shop]
 selectShops con = do
     queryResult <- quickQuery' con "SELECT * FROM shop" []
     return $ map conv queryResult
@@ -134,11 +141,11 @@ selectShops con = do
                                (fromSql n)
                                (fromSql c)
 
-insertVoucher :: Connection ->
-                 (Int, Int) ->
-                 IO Voucher
+insertVoucher :: Connection
+              -> (Int, Int)
+              -> IO Voucher
 insertVoucher con (timestamp, shop_id) = do
-    id <- computeNextId con "voucher"
+    id <- computeNextPrimaryKey con "voucher"
     let params = [ toSql id
                  , toSql timestamp
                  , toSql shop_id ]
@@ -146,9 +153,9 @@ insertVoucher con (timestamp, shop_id) = do
     commit con
     return $ Voucher id timestamp shop_id
 
-updateVoucher :: Connection ->
-                 Voucher ->
-                 IO ()
+updateVoucher :: Connection
+              -> Voucher
+              -> IO ()
 updateVoucher con v = do
     run con "UPDATE voucher SET timestamp = ?, shop_id = ? WHERE id = ?" params
     commit con
@@ -156,17 +163,17 @@ updateVoucher con v = do
                  , toSql $ voucherShopId v
                  , toSql $ voucherId v ]
 
-deleteVoucher :: Connection ->
-                 Voucher ->
-                 IO ()
+deleteVoucher :: Connection
+              -> Voucher
+              -> IO ()
 deleteVoucher con v = do
     run con "DELETE FROM voucher WHERE id = ?" params
     commit con
   where params = [ toSql $ voucherId v ]
 
-selectVouchersByYear :: Connection ->
-                        Int ->
-                        IO [ Voucher ]
+selectVouchersByYear :: Connection
+                     -> Int
+                     -> IO [Voucher]
 selectVouchersByYear con year = do
     queryResult <- quickQuery' con "SELECT * FROM voucher WHERE strftime('%Y', timestamp) = ?" params
     return $ map conv queryResult
@@ -175,9 +182,9 @@ selectVouchersByYear con year = do
                                   (fromSql t)
                                   (fromSql s)
 
-selectVouchersByYearAndMonth :: Connection ->
-                                (Int, Int) ->
-                                IO [Voucher]
+selectVouchersByYearAndMonth :: Connection
+                             -> (Int, Int)
+                             -> IO [Voucher]
 selectVouchersByYearAndMonth con (year, month) = do
     queryResult <- quickQuery' con "SELECT * FROM voucher WHERE strftime('%Y', timestamp) = ? AND strftime('%m', timestamp) = ?" params
     return $ map conv queryResult
@@ -187,11 +194,11 @@ selectVouchersByYearAndMonth con (year, month) = do
                                   (fromSql t)
                                   (fromSql s)
 
-insertVoucherPosition :: Connection ->
-                         (Int, Int, Double, Double) ->
-                         IO VoucherPosition
+insertVoucherPosition :: Connection
+                      -> (Int, Int, Double, Double)
+                      -> IO VoucherPosition
 insertVoucherPosition con (vou_id, art_id, quantity, price) = do
-    id <- computeNextId con "position"
+    id <- computeNextPrimaryKey con "position"
     let params = [ toSql id
                  , toSql vou_id
                  , toSql art_id
@@ -201,9 +208,9 @@ insertVoucherPosition con (vou_id, art_id, quantity, price) = do
     commit con
     return $ VoucherPosition id vou_id art_id quantity price
 
-updatePosition :: Connection ->
-                  VoucherPosition ->
-                  IO ()
+updatePosition :: Connection
+               -> VoucherPosition
+               -> IO ()
 updatePosition con p = do
     run con "UPDATE position SET voucher_id = ?, article_id = ?, quantity = ?, price = ? WHERE id = ?" params
     commit con
@@ -213,17 +220,17 @@ updatePosition con p = do
                  , toSql $ voucherPositionPrice p
                  , toSql $ voucherPositionId p ]
 
-deletePosition :: Connection ->
-                  VoucherPosition ->
-                  IO ()
+deletePosition :: Connection
+               -> VoucherPosition
+               -> IO ()
 deletePosition con p = do
     run con "DELETE FROM position WHERE id = ?" params
     commit con
   where params = [ toSql $ voucherPositionId p ]
 
-selectPositions :: Connection ->
-                   Voucher ->
-                   IO [VoucherPosition]
+selectPositions :: Connection
+                -> Voucher
+                -> IO [VoucherPosition]
 selectPositions con v = do
     queryResult <- quickQuery' con "SELECT * FROM position WHERE voucher_id = ?" params
     return $ map conv queryResult
