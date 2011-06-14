@@ -6,16 +6,26 @@ import System.Time
 
 import Types
 
+computeNextId :: Connection ->
+                String ->
+                IO Int
+computeNextId con table = do
+    queryResult <- quickQuery' con "SELECT max(id) FROM ?" params
+    return $ (fromSql $ head . head $ queryResult) + 1
+  where params = [ toSql table ]
+
 insertArticle :: Connection -> 
-                 Article -> 
-                 IO ()
-insertArticle con a = do
-    run con "INSERT INTO article VALUES (?, ?, ?, ?)" param
+                 (String, Double, Int) -> 
+                 IO Article
+insertArticle con (name, price, cat_id) = do
+    id <- computeNextId con "article"
+    let params = [ toSql id
+                 , toSql name
+                 , toSql price
+                 , toSql cat_id ]
+    run con "INSERT INTO article VALUES (?, ?, ?, ?)" params
     commit con
-    where param = [ SqlNull
-                  , toSql $ articleId a
-                  , toSql $ articlePrice a
-                  , toSql $ articleCategoryId a ]
+    return $ Article id name price cat_id
 
 updateArticle :: Connection -> 
                  Article -> 
@@ -47,14 +57,16 @@ selectArticles con = do
                                     (fromSql c)
 
 insertCategory :: Connection -> 
-                  Category -> 
-                  IO ()
-insertCategory con c = do
-	run con "INSERT INTO category VALUES (?, ?, ?)" param
-	commit con
-  where param = [ SqlNull
-                , toSql $ categoryParent c
-                , toSql $ categoryName c ]
+                  (Int, String) -> 
+                  IO Category
+insertCategory con (parent, name) = do
+    id <- computeNextId con "category"
+    let params = [ toSql id
+                 , toSql parent
+                 , toSql name ]
+    run con "INSERT INTO category VALUES (?, ?, ?)" params
+    commit con
+    return $ Category id parent name
 
 updateCategory :: Connection -> 
                   Category -> 
@@ -84,14 +96,16 @@ selectCategories con = do
                                    (fromSql n)
 
 insertShop :: Connection ->
-              Shop ->
-              IO ()
-insertShop con s = do
+              (String, String) ->
+              IO Shop
+insertShop con (name, city) = do
+    id <- computeNextId con "shop"
+    let params = [ toSql id
+                 , toSql name
+                 , toSql city ]
     run con "INSERT INTO shop VALUES(?, ?, ?)" params
     commit con
-  where params = [ toSql $ shopId s
-                 , toSql $ shopName s
-                 , toSql $ shopCity s ]
+    return $ Shop id name city 
 
 updateShop :: Connection ->
               Shop ->
@@ -121,19 +135,16 @@ selectShops con = do
                                (fromSql c)
 
 insertVoucher :: Connection ->
-                 Voucher ->
-                 IO Int
-insertVoucher con v = do
-    maxId <- selectMaxId
-    let maxId' = maxId + 1
-        param = [ toSql maxId'
-                , toSql $ voucherTimestamp v
-                , toSql $ voucherShopId v ]
-    run con "INSERT INTO voucher VALUES(?, ?, ?)" param
+                 (Int, Int) ->
+                 IO Voucher
+insertVoucher con (timestamp, shop_id) = do
+    id <- computeNextId con "voucher"
+    let params = [ toSql id
+                 , toSql timestamp
+                 , toSql shop_id ]
+    run con "INSERT INTO voucher VALUES(?, ?, ?)" params
     commit con
-    return maxId'
-  where selectMaxId = do r <- quickQuery' con "SELECT max(id) FROM voucher" []
-                         return ( fromSql $ head . head $ r :: Int )
+    return $ Voucher id timestamp shop_id
 
 updateVoucher :: Connection ->
                  Voucher ->
@@ -156,39 +167,39 @@ deleteVoucher con v = do
 selectVouchersByYear :: Connection ->
                         Int ->
                         IO [ Voucher ]
-selectVouchersByYear con t = do
+selectVouchersByYear con year = do
     queryResult <- quickQuery' con "SELECT * FROM voucher WHERE strftime('%Y', timestamp) = ?" params
     return $ map conv queryResult
-  where params = [ toSql t ]
+  where params = [ toSql year ]
         conv (i:t:s:[]) = Voucher (fromSql i)
                                   (fromSql t)
                                   (fromSql s)
 
 selectVouchersByYearAndMonth :: Connection ->
-                                Int ->
-                                Int ->
+                                (Int, Int) ->
                                 IO [Voucher]
-selectVouchersByYearAndMonth con y m = do
+selectVouchersByYearAndMonth con (year, month) = do
     queryResult <- quickQuery' con "SELECT * FROM voucher WHERE strftime('%Y', timestamp) = ? AND strftime('%m', timestamp) = ?" params
     return $ map conv queryResult
-  where params = [ toSql y
-                 , toSql m ]
+  where params = [ toSql year
+                 , toSql month ]
         conv (i:t:s:[]) = Voucher (fromSql i)
                                   (fromSql t)
                                   (fromSql s)
 
-insertPosition :: Connection ->
-                  VoucherPosition ->
-                  IO ()
-insertPosition con p = do
+insertVoucherPosition :: Connection ->
+                         (Int, Int, Double, Double) ->
+                         IO VoucherPosition
+insertVoucherPosition con (vou_id, art_id, quantity, price) = do
+    id <- computeNextId con "position"
+    let params = [ toSql id
+                 , toSql vou_id
+                 , toSql art_id
+                 , toSql quantity
+                 , toSql price ]
     run con "INSERT INTO position VALUES(?, ?, ?, ?, ?)" params
     commit con
-    return ()
-  where params = [ SqlNull
-                 , toSql $ voucherPositionVoucherId p
-                 , toSql $ voucherPositionArticleId p
-                 , toSql $ voucherPositionQuantity p
-                 , toSql $ voucherPositionPrice p ]
+    return $ VoucherPosition id vou_id art_id quantity price
 
 updatePosition :: Connection ->
                   VoucherPosition ->
