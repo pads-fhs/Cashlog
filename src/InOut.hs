@@ -6,10 +6,6 @@ import Control.Exception
 import Data.Maybe
 import Types
 
-completeKey :: CompleteFunc IO
-completeKey (word, rest) = do
-    
-
 -- | The 'readString' function is a specialization of the 'readValue' function.
 readString :: String -> Maybe String -> IO String
 readString msg def = do

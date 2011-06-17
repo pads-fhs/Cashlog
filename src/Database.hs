@@ -1,10 +1,32 @@
-module Cashlog.Database where
+module Database where
 
 import Database.HDBC
 import Database.HDBC.Sqlite3
-import System.Time
 
 import Types
+
+connectDatabase :: FilePath
+                -> IO Connection
+connectDatabase path = do
+    con <- connectSqlite3 path
+    run con "PRAGMA case_sensitive_like = TRUE"
+    return con
+
+disconnectDatabase :: Connection
+                   -> IO ()
+disconnectDatabase = disconnect
+
+isPrimaryKeyValid :: Connection
+                  -> String
+                  -> Int
+                  -> IO Bool
+isPrimaryKeyValid con table id = do
+    queryResult <- quickQuery' con ("SELECT id FROM " ++ table ++ " WHERE id = ?") [toSql id]
+    return $ null queryResult
+
+isArticlePrimaryKeyValid con = isPrimaryKeyValid con "article"
+isCategoryPrimaryKeyValid con = isPrimaryKeyValid con "category"
+isShopPrimaryKeyValid con = isPrimaryKeyValid con "shop"
 
 computeNextPrimaryKey :: Connection
                       -> String
@@ -13,13 +35,12 @@ computeNextPrimaryKey con table = do
     queryResult <- quickQuery' con ("SELECT max(id) FROM " ++ table) []
     return $ (fromSql $ head . head $ queryResult) + 1
 
-completePrimaryKey :: Connection
-                   -> String
-                   -> Int
-                   -> IO [Int]
-completePrimaryKey con table id = do
-    queryResult <- quickQuery' con ("SELECT id FROM " ++ table ++ " WHERE id LIKE '" ++ (show id) ++"%'") []
-    return $ map (\(i:[]) -> fromSql i) queryResult
+getArticleCompletion :: Connection
+                     -> String
+                     -> IO [String]
+getArticleCompletion con word = do
+    queryResult <- quickQuery' con ("SELECT name FROM article WHERE name LIKE '" ++ word ++"%'") []
+    return $ map (\(n:[]) -> fromSql n) queryResult
 
 insertArticle :: Connection
               -> (String, Double, Int)
@@ -63,6 +84,13 @@ selectArticles con = do
                                     (fromSql p)
                                     (fromSql c)
 
+getCategoryCompletion :: Connection
+                      -> String
+                      -> IO [String]
+getCategoryCompletion con word = do
+    queryResult <- quickQuery' con ("SELECT name FROM category WHERE name LIKE '" ++ word ++ "%'") []
+    return $ map (\(n:[]) -> fromSql n) queryResult
+
 insertCategory :: Connection
                -> (Int, String)
                -> IO Category
@@ -101,6 +129,13 @@ selectCategories con = do
   where conv (i:p:n:[]) = Category (fromSql i)
                                    (fromSql p)
                                    (fromSql n)
+
+getShopCompletion :: Connection
+                  -> String
+                  -> IO [(String, String)]
+getShopCompletion con word = do
+    queryResult <- quickQuery' con ("SELECT name, city FROM shop WHERE name LIKE '" ++ word ++ "%' OR city LIKE '" ++ word ++ "%'") []
+    return $ map (\(n:c:[]) -> (fromSql n, fromSql c)) queryResult
 
 insertShop :: Connection
            -> (String, String)
