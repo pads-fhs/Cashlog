@@ -86,30 +86,48 @@ readArticleKey :: Connection
                -> String
                -> Maybe Int
                -> IO Int
-readArticleKey con msg def = readKey msg def (completeArticle con) (articleIdFromName con) (isArticleKeyValid con)
+readArticleKey con msg def = readKey msg def (completeArticle con) (articleIdFromName con) (isArticleKey con)
 
-readArticle :: Maybe Article ->
-               IO Article
-readArticle a = do
-    n <- readString "Bezeichnung" $ fmap articleName a
-    p <- readValue  "Preis"       $ fmap articlePrice a
-    c <- readValue " Kategorie"   $ fmap articleCategoryId a
-    let i = maybe (-1) articleId a
-    return $ Article  i n p c
+readCategoryKey :: Connection
+                -> String
+                -> Maybe Int
+                -> IO Int
+readCategoryKey con msg def = readKey msg def (completeCategory con) (categoryIdFromName con) (isCategoryKey con)
 
-readCategory :: Maybe Category ->
-                IO Category
-readCategory c = do
-    p <- readValue  "Oberkategorie" $ fmap categoryParent c
-    n <- readString "Name"          $ fmap categoryName c
-    let i = maybe (-1) categoryId c
-    return $ Category i p n
+readShopKey :: Connection
+            -> String
+            -> Maybe Int
+            -> IO Int
+readShopKey con msg def = readKey msg def (completeShop con) (shopIdFromNameAndCity con) (isShopKey con)
+
+readArticle :: Connection
+            -> Maybe Article
+            -> IO (Either Article ArticleSkeleton) 
+readArticle con art = do
+    n <- readString "Bezeichnung"        $ fmap articleName art
+    p <- readValue  "Preis"              $ fmap articlePrice art
+    c <- readCategoryKey con "Kategorie" $ fmap articleCategoryId art
+    case art of
+      Just a  -> return $ Left $ Article (articleId a) n p c
+      Nothing -> return $ Right (n, p, c)
+
+readCategory :: Maybe Category
+             -> IO (Either Category CategorySkeleton)
+readCategory cat = do
+    p <- readValue  "Oberkategorie" $ fmap categoryParent cat
+    n <- readString "Name"          $ fmap categoryName cat
+    case cat of
+      Just c  -> return $ Left $ Category (categoryId c) p n
+      Nothing -> return $ Right (p, n)
 
 readShop :: Maybe Shop ->
-            IO Shop
-readShop s = do
-    n <- readString "Name"  $ fmap shopName s
-    c <- readString "Stadt" $ fmap shopCity s
-    let i = maybe (-1) shopId s
-    return $ Shop i n c
+            IO (Either Shop ShopSkeleton)
+readShop shop = do
+    n <- readString "Name"  $ fmap shopName shop
+    c <- readString "Stadt" $ fmap shopCity shop
+    case shop of
+      Just s  -> return $ Left $ Shop (shopId s) n c
+      Nothing -> return $ Right (n, c)
+
+--readPosition :: 
 

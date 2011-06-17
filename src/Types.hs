@@ -7,17 +7,23 @@ data Article = Article {
     , articleCategoryId :: Int
     } deriving (Show)
 
+type ArticleSkeleton = (String, Double, Int)
+
 data Category = Category {
       categoryId :: Int
     , categoryParent :: Int
     , categoryName :: String
     } deriving (Show)
 
+type CategorySkeleton = (Int, String)
+
 data Shop = Shop {
       shopId :: Int
     , shopName :: String
     , shopCity :: String
     } deriving (Show)
+
+type ShopSkeleton = (String, String)
 
 data VoucherPosition = VoucherPosition {
       voucherPositionId :: Int

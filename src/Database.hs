@@ -24,9 +24,10 @@ isPrimaryKeyValid con table id = do
     queryResult <- quickQuery' con ("SELECT id FROM " ++ table ++ " WHERE id = ?") [toSql id]
     return $ not $ null queryResult
 
-isArticleKeyValid con = isPrimaryKeyValid con "article"
-isCategoryKeyValid con = isPrimaryKeyValid con "category"
-isShopKeyValid con = isPrimaryKeyValid con "shop"
+isArticleKey con = isPrimaryKeyValid con "article"
+isCategoryKey con = isPrimaryKeyValid con "category"
+isShopKey con = isPrimaryKeyValid con "shop"
+isVoucherKey con = isPrimaryKeyValid con "voucher"
 
 computeNextPrimaryKey :: Connection
                       -> String
@@ -53,7 +54,7 @@ articleIdFromName con name = do
   where params = [ toSql name ]
 
 insertArticle :: Connection
-              -> (String, Double, Int)
+              -> ArticleSkeleton
               -> IO Article
 insertArticle con (name, price, cat_id) = do
     id <- computeNextPrimaryKey con "article"
@@ -150,29 +151,29 @@ selectCategories con = do
                                    (fromSql p)
                                    (fromSql n)
 
-wrapNameAndCity :: String
-                -> String
-                -> String
-wrapNameAndCity n c = n ++ "(" ++ c ++ ")"
+wrapPair :: String
+         -> String
+         -> String
+wrapPair n1 n2 = n1 ++ "(" ++ n2 ++ ")"
 
-unwrapNameAndCity :: String
-                  -> (String,String)
-unwrapNameAndCity nc = let (n,c) = break (\b -> b == '(') nc
-                       in  (n, filter (\s -> not (s == '(' || s == ')')) c)
+unwrapPair :: String
+           -> (String,String)
+unwrapPair p = let (n1,n2) = break (\b -> b == '(') p
+               in  (n1, filter (\s -> not (s == '(' || s == ')')) n2)
 
 completeShop :: Connection
              -> String
              -> IO [(String)]
 completeShop con nc = do
-    let (n,c) = unwrapNameAndCity nc
+    let (n,c) = unwrapPair nc
     queryResult <- quickQuery' con ("SELECT name, city FROM shop WHERE name LIKE '" ++ n ++ "%' AND city LIKE '" ++ c ++ "%'") []
-    return $ map (\(n:c:[]) -> wrapNameAndCity (fromSql n) (fromSql c)) queryResult
+    return $ map (\(n:c:[]) -> wrapPair (fromSql n) (fromSql c)) queryResult
 
 shopIdFromNameAndCity :: Connection
                       -> String
                       -> IO (Maybe Int)
 shopIdFromNameAndCity con nc = do
-    let (n,c) = unwrapNameAndCity nc
+    let (n,c) = unwrapPair nc
         (n',c') = (toSql n, toSql c)
     queryResult <- quickQuery' con "SELECT id FROM shop WHERE name = ? AND city = ?" [n', c']
     case queryResult of
@@ -217,6 +218,38 @@ selectShops con = do
   where conv (i:n:c:[]) = Shop (fromSql i)
                                (fromSql n)
                                (fromSql c)
+
+wrapTriple :: String
+           -> String
+           -> String
+           -> String
+wrapTriple n1 n2 n3 = n1 ++ "(" ++ n2 ++ "/" ++ n3 ++ ")"
+
+unwrapTriple :: String
+             -> (String, String, String)
+unwrapTriple t = let (n1,n23) = unwrapPair t
+                     (n2,n3)  = break (\b -> b == '/') n23
+                     n3'      = filter (\f -> f /= '/' n3
+                 in  (n1,n2,n3')
+
+completeVoucher :: Connection
+                -> String
+                -> IO [(String)]
+completeVoucher con dsc = do
+    let (d,s,c) = unwrapTriple dsc
+    queryResult <- quickQuery' con ("SELECT name, city FROM shop WHERE name LIKE '" ++ d ++ "%' AND city LIKE '" ++ s ++ "%'") []
+    return $ map (\(n:c:[]) -> wrapPair (fromSql n) (fromSql c)) queryResult
+
+voucherIdFromDateAndShop :: Connection
+                         -> String
+                         -> IO (Maybe Int)
+voucherIdFromDateAndShop con dsc = do
+    let (d,c,s)    = unwrapPair dsc
+        (d',s',c') = (toSql d, toSql s, toSql c)
+    queryResult <- quickQuery' con "SELECT id FROM shop WHERE name = ? AND city = ?" [d', s', c']
+    case queryResult of
+      (x:[]) -> return $ Just $ fromSql $ head x
+      _      -> return Nothing
 
 insertVoucher :: Connection
               -> (Int, Int)
