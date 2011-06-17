@@ -9,33 +9,24 @@ import Data.Types
 import Data.Completion
 import CompletionHelper
 
-import Data.Maybe
-
-defaultInputLoop :: (Read a, Show a)
-                 => String
-                 -> Maybe a
-                 -> InputT IO String
-defaultInputLoop msg def = do
-    raw <- case def of
-      Just d  -> getInputLineWithInitial (msg ++ ": ") (show d, "")
-      Nothing -> getInputLine (msg ++ ": ")
-    case raw of
-      Nothing -> defaultInputLoop msg def
-      Just r  -> return r
-
 readString :: String
            -> Maybe String
            -> IO String
-readString msg def = runInputT settings (defaultInputLoop msg def)
-  where settings = Settings CompletionHelper.noCompletion Nothing False
+readString msg def = runInputT settings loop
+  where settings = Settings noCompletion Nothing False
+        loop     = do raw <- case def of
+                               Just d  -> getInputLineWithInitial (msg ++ ": ") (d, "")
+                               Nothing -> getInputLine (msg ++ ": ")
+                      case raw of
+                        Just r  -> return r
+                        Nothing -> loop
 
-readValue :: Read a
+readValue :: (Read a, Show a)
           => String
           -> Maybe a
           -> IO a
 readValue msg def = do
-    raw <- readString msg def
-    return $ fromJust def
+    raw <- readString msg $ fmap show def
     tryRead <- try $ readIO raw :: Read a => IO ( Either SomeException a )
     case tryRead of
       Left _ -> readValue msg def
@@ -48,7 +39,7 @@ readKey :: String
         -> (Int -> IO Bool)
         -> IO Int
 readKey msg def fcomp fmkkey fchkkey = do
-    inp <- runInputT (Settings (completeWord Nothing " " (simpleWordCompletion fcomp)) Nothing False) (defaultInputLoop msg def)
+    inp <- runInputT (Settings (completeWord Nothing " " (simpleWordCompletion fcomp)) Nothing False) loop
     tryReadInt <- try $ readIO inp :: IO (Either SomeException Int)
     case tryReadInt of
       Left _    -> do mkkey <- fmkkey inp
@@ -59,6 +50,12 @@ readKey msg def fcomp fmkkey fchkkey = do
                       case chkkey of
                         True -> return key
                         _    -> readKey msg def fcomp fmkkey fchkkey
+  where loop = do raw <- case def of
+                           Just d  -> getInputLineWithInitial (msg ++ ": ") (show d, "")
+                           Nothing -> getInputLine (msg ++ ": ")
+                  case raw of
+                    Nothing -> loop
+                    Just r  -> return r
 
 readArticleKey :: Connection
                -> String
