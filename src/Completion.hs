@@ -12,8 +12,8 @@ commonPrefix (([]):_)  = []
 commonPrefix xss@(x:_) = fst $ foldl prefix ([], True) (inits x)
   where isCommonPrefix p    = and $ map (isPrefixOf p) xss
         prefix (o, True) n  = case isCommonPrefix n of
-                              True -> (n, True)
-                              _    -> (o, False)
+                                True -> (n, True)
+                              _      -> (o, False)
         prefix (o, False) _ = (o, False)
 
 commonPrefix' :: [String]
@@ -25,8 +25,8 @@ commonPrefix' xss@(x:_) = fst $ foldl prefix ([], True) prefixes
         xss'                = map (map toLower) xss
         isCommonPrefix p    = and $ map (isPrefixOf p) xss'
         prefix (o, True) n  = case isCommonPrefix n of
-                              True -> (n, True)
-                              _    -> (o, False)
+                                True -> (n, True)
+                              _      -> (o, False)
         prefix (o, False) _ = (o, False)
 
 simpleWordCompletion :: (String -> IO [String])
