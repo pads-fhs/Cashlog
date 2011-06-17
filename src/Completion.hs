@@ -5,11 +5,6 @@ import Data.Char
 import System.Console.Haskeline
 import System.Console.Haskeline.Completion
 
-wl = [ "Hausrat"
-     , "Hausbau"
-     , "Hausfrau"
-     , "Haudegen" ]
-
 commonPrefix :: [String]
              -> String
 commonPrefix []        = []
