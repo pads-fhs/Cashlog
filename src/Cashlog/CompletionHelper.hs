@@ -28,6 +28,3 @@ simpleWordCompletion fcomp word = do
   where makeCompletion [] comp = Completion word comp False
         makeCompletion p comp  = Completion (word ++ p) comp False
 
---noCompletion :: (String, String)
---             -> IO (String, [Completion])
---noCompletion (_, _) = return $ ([], [])
