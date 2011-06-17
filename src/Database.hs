@@ -9,7 +9,7 @@ connectDatabase :: FilePath
                 -> IO Connection
 connectDatabase path = do
     con <- connectSqlite3 path
-    run con "PRAGMA case_sensitive_like = TRUE"
+    run con "PRAGMA case_sensitive_like = TRUE" []
     return con
 
 disconnectDatabase :: Connection
@@ -22,11 +22,11 @@ isPrimaryKeyValid :: Connection
                   -> IO Bool
 isPrimaryKeyValid con table id = do
     queryResult <- quickQuery' con ("SELECT id FROM " ++ table ++ " WHERE id = ?") [toSql id]
-    return $ null queryResult
+    return $ not $ null queryResult
 
-isArticlePrimaryKeyValid con = isPrimaryKeyValid con "article"
-isCategoryPrimaryKeyValid con = isPrimaryKeyValid con "category"
-isShopPrimaryKeyValid con = isPrimaryKeyValid con "shop"
+isArticleKeyValid con = isPrimaryKeyValid con "article"
+isCategoryKeyValid con = isPrimaryKeyValid con "category"
+isShopKeyValid con = isPrimaryKeyValid con "shop"
 
 computeNextPrimaryKey :: Connection
                       -> String
@@ -35,12 +35,22 @@ computeNextPrimaryKey con table = do
     queryResult <- quickQuery' con ("SELECT max(id) FROM " ++ table) []
     return $ (fromSql $ head . head $ queryResult) + 1
 
-getArticleCompletion :: Connection
-                     -> String
-                     -> IO [String]
-getArticleCompletion con word = do
+completeArticle :: Connection
+                -> String
+                -> IO [String]
+completeArticle con word = do
     queryResult <- quickQuery' con ("SELECT name FROM article WHERE name LIKE '" ++ word ++"%'") []
     return $ map (\(n:[]) -> fromSql n) queryResult
+
+articleIdFromName :: Connection
+                  -> String
+                  -> IO (Maybe Int)
+articleIdFromName con name = do
+    queryResult <- quickQuery' con "SELECT id FROM article WHERE name = ?" params
+    case queryResult of
+      (x:[]) -> return $ Just $ fromSql $ head x
+      _      -> return Nothing
+  where params = [ toSql name ]
 
 insertArticle :: Connection
               -> (String, Double, Int)
@@ -84,12 +94,22 @@ selectArticles con = do
                                     (fromSql p)
                                     (fromSql c)
 
-getCategoryCompletion :: Connection
-                      -> String
-                      -> IO [String]
-getCategoryCompletion con word = do
+completeCategory :: Connection
+                 -> String
+                 -> IO [String]
+completeCategory con word = do
     queryResult <- quickQuery' con ("SELECT name FROM category WHERE name LIKE '" ++ word ++ "%'") []
     return $ map (\(n:[]) -> fromSql n) queryResult
+
+categoryIdFromName :: Connection
+                   -> String
+                   -> IO (Maybe Int)
+categoryIdFromName con name = do
+    queryResult <- quickQuery' con "SELECT id FROM category WHERE name = ?" params
+    case queryResult of
+      (x:[]) -> return $ Just $ fromSql $ head x
+      _      -> return Nothing
+  where params = [ toSql name ]
 
 insertCategory :: Connection
                -> (Int, String)
@@ -130,12 +150,34 @@ selectCategories con = do
                                    (fromSql p)
                                    (fromSql n)
 
-getShopCompletion :: Connection
-                  -> String
-                  -> IO [(String, String)]
-getShopCompletion con word = do
-    queryResult <- quickQuery' con ("SELECT name, city FROM shop WHERE name LIKE '" ++ word ++ "%' OR city LIKE '" ++ word ++ "%'") []
-    return $ map (\(n:c:[]) -> (fromSql n, fromSql c)) queryResult
+wrapNameAndCity :: String
+                -> String
+                -> String
+wrapNameAndCity n c = n ++ "(" ++ c ++ ")"
+
+unwrapNameAndCity :: String
+                  -> (String,String)
+unwrapNameAndCity nc = let (n,c) = break (\b -> b == '(') nc
+                       in  (n, filter (\s -> not (s == '(' || s == ')')) c)
+
+completeShop :: Connection
+             -> String
+             -> IO [(String)]
+completeShop con nc = do
+    let (n,c) = unwrapNameAndCity nc
+    queryResult <- quickQuery' con ("SELECT name, city FROM shop WHERE name LIKE '" ++ n ++ "%' AND city LIKE '" ++ c ++ "%'") []
+    return $ map (\(n:c:[]) -> wrapNameAndCity (fromSql n) (fromSql c)) queryResult
+
+shopIdFromNameAndCity :: Connection
+                      -> String
+                      -> IO (Maybe Int)
+shopIdFromNameAndCity con nc = do
+    let (n,c) = unwrapNameAndCity nc
+        (n',c') = (toSql n, toSql c)
+    queryResult <- quickQuery' con "SELECT id FROM shop WHERE name = ? AND city = ?" [n', c']
+    case queryResult of
+      (x:[]) -> return $ Just $ fromSql $ head x
+      _      -> return Nothing
 
 insertShop :: Connection
            -> (String, String)
