@@ -35,45 +35,52 @@ readValue msg def = do
 readKey :: String
         -> Maybe Int
         -> (String -> IO [String])
+        -> (Int -> IO (Maybe String))
         -> (String -> IO (Maybe Int))
         -> (Int -> IO Bool)
         -> IO Int
-readKey msg def fcomp fmkkey fchkkey = do
-    inp <- runInputT (Settings (completeWord Nothing " " (simpleWordCompletion fcomp)) Nothing False) loop
+readKey msg def fcomp fmapcomp fmapkey fchkkey = do
+    defStr <- case def of
+                Just defInt -> do defStr' <- fmapcomp defInt
+                                  case defStr' of
+                                    Just s  -> return s
+                                    Nothing -> return $ show defInt
+                Nothing     -> return ""
+    inp <- runInputT (Settings (completeWord Nothing " " (simpleWordCompletion fcomp)) Nothing False) (loop defStr)
     tryReadInt <- try $ readIO inp :: IO (Either SomeException Int)
     case tryReadInt of
-      Left _    -> do mkkey <- fmkkey inp
+      Left _    -> do mkkey <- fmapkey inp
                       case mkkey of
                         Just key -> return key
-                        Nothing  -> readKey msg def fcomp fmkkey fchkkey
+                        Nothing  -> readKey msg def fcomp fmapcomp fmapkey fchkkey
       Right key -> do chkkey <- fchkkey key
                       case chkkey of
                         True -> return key
-                        _    -> readKey msg def fcomp fmkkey fchkkey
-  where loop = do raw <- case def of
-                           Just d  -> getInputLineWithInitial (msg ++ ": ") (show d, "")
-                           Nothing -> getInputLine (msg ++ ": ")
-                  case raw of
-                    Nothing -> loop
-                    Just r  -> return r
+                        _    -> readKey msg def fcomp fmapcomp fmapkey fchkkey
+  where loop def' = do
+            raw <- getInputLineWithInitial (msg ++ ": ") (def', "")
+            case raw of
+              Just r  -> return r
+              Nothing -> loop def'
 
 readArticleKey :: Connection
                -> String
                -> Maybe Int
                -> IO Int
-readArticleKey con msg def = readKey msg def (completeArticle con) (mapArticleCompletionToKey con) (isArticleKey con)
+readArticleKey con msg def = readKey msg def (completeArticle con) (mapArticleKeyToCompletion con) (mapArticleCompletionToKey con) (isArticleKey con)
+
 
 readCategoryKey :: Connection
                 -> String
                 -> Maybe Int
                 -> IO Int
-readCategoryKey con msg def = readKey msg def (completeCategory con) (mapCategoryCompletionToKey con) (isCategoryKey con)
+readCategoryKey con msg def = readKey msg def (completeCategory con) (mapCategoryKeyToCompletion con) (mapCategoryCompletionToKey con) (isCategoryKey con)
 
 readShopKey :: Connection
             -> String
             -> Maybe Int
             -> IO Int
-readShopKey con msg def = readKey msg def (completeShop con) (mapShopCompletionToKey con) (isShopKey con)
+readShopKey con msg def = readKey msg def (completeShop con) (mapShopKeyToCompletion con) (mapShopCompletionToKey con) (isShopKey con)
 
 readArticle :: Connection
             -> Maybe Article
@@ -103,3 +110,4 @@ readShop shop = do
     case shop of
       Just s  -> return $ Left $ Shop (shopId s) n c
       Nothing -> return $ Right (n, c)
+

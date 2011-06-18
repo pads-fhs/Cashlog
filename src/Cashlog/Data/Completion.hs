@@ -64,8 +64,8 @@ mapArticleCompletionToKey con comp = do
   where params = [ toSql comp ]
 
 mapArticleKeyToCompletion :: Connection
-                          -> String
-                          -> IO (Maybe Int)
+                          -> Int
+                          -> IO (Maybe String)
 mapArticleKeyToCompletion con comp = do
     queryResult <- quickQuery' con "SELECT id FROM article WHERE name = ?" params
     return $ justTopLeft queryResult
