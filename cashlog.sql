@@ -20,7 +20,7 @@ category_id INTEGER NOT NULL
 
 CREATE TABLE voucher (
 id          INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-timestamp   INTEGER NOT NULL,
+timestamp   TEXT NOT NULL,
 shop_id     INTEGER NOT NULL
 );
 

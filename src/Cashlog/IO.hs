@@ -1,13 +1,19 @@
 module IO where
 
+import Data.Maybe
 import Control.Exception
 import Database.HDBC.Sqlite3
 import System.Console.Haskeline
 import System.Console.Haskeline.Completion
+import Data.Time hiding (readTime)
+import System.Locale
 
 import Data.Types
 import Data.Completion
 import CompletionHelper
+
+dateFormat = "%d.%m.%Y"
+timeFormat = "%R"
 
 readString :: String
            -> Maybe String
@@ -32,6 +38,36 @@ readValue msg def = do
       Left _ -> readValue msg def
       Right val -> return val
 
+readDate :: String
+         -> Maybe Day
+         -> IO Day
+readDate msg def = do
+    d <- readString msg defDate
+    case (parseTime defaultTimeLocale dateFormat d) of
+      Just d' -> return d'
+      Nothing -> readDate msg def
+  where defDate = fmap (formatTime defaultTimeLocale dateFormat) def
+
+readTime :: String
+         -> Maybe TimeOfDay
+         -> IO TimeOfDay
+readTime msg def = do
+    t <- readString msg defTime
+    case parseTime defaultTimeLocale timeFormat t of
+      Just t' -> return t'
+      Nothing -> readTime msg def
+  where defTime = fmap (formatTime defaultTimeLocale timeFormat) def
+{-
+readDateTime :: String
+             -> Maybe UTCTime
+             -> IO (Maybe UTCTime)
+readDateTime def = do
+    d <- readString "Datum" defDate
+    t <- readString "Uhrzeit" defTime
+    fmap show getCurrentTime
+where defDate = fmap (formatTime defaultTimeLocale dateFormat) (fmap utctDay mutc) 
+      defTime = fmap (formatTime defaultTimeLocale dateFormat) (fmap utctDay mutc)
+-}
 readKey :: String
         -> Maybe Int
         -> (String -> IO [String])
