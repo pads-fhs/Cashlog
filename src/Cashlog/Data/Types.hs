@@ -1,4 +1,4 @@
-module Data.Types where
+module Cashlog.Data.Types where
 
 data Article = Article {
       articleId :: Int
@@ -33,8 +33,13 @@ data VoucherPosition = VoucherPosition {
     , voucherPositionPrice :: Double
     } deriving (Show)
 
+type VoucherPositionSkeleton = (Int, Int, Double, Double)
+
 data Voucher = Voucher {
       voucherId :: Int
-    , voucherTimestamp :: Int
+    , voucherTimestamp :: String
     , voucherShopId :: Int
     } deriving (Show)
+
+type VoucherSkeleton = (String, Int)
+

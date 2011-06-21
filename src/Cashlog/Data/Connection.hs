@@ -1,15 +1,18 @@
-module Connection where
+module Cashlog.Data.Connection where
 
-import Database.HDBC
-import Database.HDBC.Sqlite3
+import qualified Database.HDBC         as DB
+import qualified Database.HDBC.Sqlite3 as SQL3
 
-connectDatabase :: FilePath
-                -> IO Connection
-connectDatabase path = do
-    con <- connectSqlite3 path
-    run con "PRAGMA case_sensitive_like = TRUE" []
+type DataHandle = SQL3.Connection
+
+connectDataSource :: FilePath
+                  -> IO DataHandle
+connectDataSource path = do
+    con <- SQL3.connectSqlite3 path
+    DB.run con "PRAGMA case_sensitive_like = TRUE" []
     return con
 
-disconnectDatabase :: Connection
-                   -> IO ()
-disconnectDatabase = disconnect
+disconnectDataSource :: DataHandle
+                     -> IO ()
+disconnectDataSource = DB.disconnect
+
