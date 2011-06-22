@@ -16,6 +16,7 @@ import System.Locale
 
 import Cashlog.Data.Types
 import Cashlog.Data.Completion
+import Cashlog.Cli.Utility
 
 readString :: String
            -> Maybe String
@@ -28,10 +29,6 @@ readString msg def = HKL.runInputT settings loop
                       case raw of
                         Just r  -> return r
                         Nothing -> loop
-
-dateFormat = "%d.%m.%Y"
-timeFormat = "%R"
-iso8601SqlFormat = "%Y-%m-%d %T"
 
 readDate :: String
          -> Maybe Day

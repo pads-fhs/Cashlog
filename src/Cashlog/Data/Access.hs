@@ -1,4 +1,3 @@
-
 module Cashlog.Data.Access where
 
 import qualified Database.HDBC          as DB

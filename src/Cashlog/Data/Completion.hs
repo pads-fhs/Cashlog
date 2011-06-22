@@ -172,5 +172,3 @@ articleCompletion handle  = simpleWordCompletion (completeArticle handle)
 categoryCompletion handle = simpleWordCompletion (completeCategory handle)
 shopCompletion handle     = simpleWordCompletion (completeShop handle)
 
-
-
