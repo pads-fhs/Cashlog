@@ -101,3 +101,4 @@ readKey msg def fcomp fmapcomp fmapkey fchkkey = do
             case raw of
               Just r  -> return r
               Nothing -> loop def'
+

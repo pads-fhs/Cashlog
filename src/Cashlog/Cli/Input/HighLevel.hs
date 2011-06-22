@@ -6,7 +6,7 @@ import Cashlog.Data.Connection
 import Cashlog.Data.Access
 import Cashlog.Data.Completion
 import Cashlog.Data.Types
-import Cli.Input.LowLevel
+import Cashlog.Cli.Input.LowLevel
 
 readArticleKey :: DataHandle
                -> String
@@ -80,3 +80,4 @@ readVoucherPosition handle vouKey = do
     quantity <- readValue "Menge" (Just 1.0)
     price    <- readValue "Preis" (Just $ (artPrice * quantity))
     return (vouKey, artKey, quantity, price)
+
