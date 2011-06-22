@@ -1,7 +1,0 @@
-Quickstart:
-
-Create an empty database:
-cat cashlog.sql | sqlite3 cashlog.db
-
-Run Cashlog:
-./cashlog cashlog.db

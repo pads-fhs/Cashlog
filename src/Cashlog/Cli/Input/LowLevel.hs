@@ -1,4 +1,4 @@
-module Cli.Input.LowLevel
+module Cashlog.Cli.Input.LowLevel
     ( readString
     , readDateTime
     , readValue

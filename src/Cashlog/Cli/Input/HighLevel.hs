@@ -1,4 +1,4 @@
-module Cli.Input.HighLevel where
+module Cashlog.Cli.Input.HighLevel where
 
 import Data.Time.Clock
 
