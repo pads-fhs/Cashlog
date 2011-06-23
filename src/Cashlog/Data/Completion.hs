@@ -158,10 +158,10 @@ completeVoucher :: DataHandle
 completeVoucher handle ts = do
     let (t,n) = unwrapPair ts
     result <- DB.quickQuery' handle
-                             ( "SELECT v.timestamp, s.name \
+                             ( "SELECT strftime('%d-%m-%Y-%H:%M:%S',v.timestamp), s.name \
                                \FROM voucher v, shop s \
                                \WHERE v.shop_id = s.id \
-                               \AND v.timestamp LIKE '" ++ t ++ "%' \
+                               \AND strftime('%d-%m-%Y-%H:%M:%S',v.timestamp) LIKE '" ++ t ++ "%' \
                                \AND s.name LIKE '" ++ n ++ "%'" )
                              []
     return $ map (\(t:n:[]) -> wrapPair (DB.fromSql t) (DB.fromSql n)) result
@@ -176,7 +176,7 @@ mapVoucherCompletionToKey handle comp = do
                              "SELECT v.id \
                              \FROM voucher v, shop s \
                              \WHERE v.shop_id = s.id \
-                             \AND v.timestamp = ? \
+                             \AND strftime('%d-%m-%Y-%H:%M:%S',v.timestamp) = ? \
                              \AND s.name = ?"
                              [t', n']
     return $ justTopLeft result

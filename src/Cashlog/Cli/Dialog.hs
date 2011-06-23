@@ -22,17 +22,17 @@ printHeader :: String
             -> Action
             -> IO ()
 printHeader title action = do
-    putStr "---- "
+    putStr "++++ "
     putStr title
     putStr $ case action of
                Insert -> " hinzufügen "
                Update -> " bearbeiten "
                Delete -> " löschen    "
                List   -> " anzeigen   "
-    putStrLn $ replicate (78 - (length title)) '-'
+    putStrLn $ replicate (63 - (length title)) '+'
 
 printFooter :: IO ()
-printFooter = putStrLn $ replicate 80 '-'
+printFooter = putStrLn $ replicate 80 '+'
 
 articleDialog :: DataHandle
               -> Action
@@ -93,13 +93,17 @@ voucherDialog handle action = do
     case action of
       Insert    -> do voucherSkeleton <- readVoucher handle
                       voucherKey      <- insertVoucher handle voucherSkeleton
+                      putStrLn "insert fertig"
                       posList         <- readVoucherPositions handle voucherKey
+                      putStrLn "pos lesen fertig"
                       mapM_ (insertVoucherPosition handle) posList
+                      putStrLn "pos insert fertig"
       List      -> do defDate <- getCurrentTime
                       date    <- readDate "Datum" (Just $ utctDay defDate)
                       let date' = formatTime defaultTimeLocale dateFormat date
                       printVouchers handle date'
       otherwise -> putStrLn "Operation nicht zulässig"
+    printFooter
 
 positionDialog :: DataHandle
                -> Action
@@ -110,4 +114,4 @@ positionDialog handle action = do
       List      -> do voucherKey <- readVoucherKey handle "Beleg" Nothing
                       printVoucherPositions handle voucherKey
       otherwise -> putStrLn "Operation nicht zulässig"
-
+    printFooter

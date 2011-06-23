@@ -89,13 +89,14 @@ readKey msg def fcomp fmapcomp fmapkey fchkkey = do
       Left _    -> do mkkey <- fmapkey inp
                       case mkkey of
                         Just key -> return key
-                        Nothing  -> readKey msg def fcomp fmapcomp fmapkey fchkkey
+                        Nothing  -> readKey msg' def fcomp fmapcomp fmapkey fchkkey
       Right key -> do chkkey <- fchkkey key
                       case chkkey of
                         True -> return key
-                        _    -> readKey msg def fcomp fmapcomp fmapkey fchkkey
-  where loop def' = do
-            raw <- HKL.getInputLineWithInitial (msg ++ ": ") (def', "")
+                        _    -> readKey msg' def fcomp fmapcomp fmapkey fchkkey
+  where msg'      = msg ++ "(+)"
+        loop def' = do
+            raw <- HKL.getInputLineWithInitial (msg' ++ ": ") (def', "")
             case raw of
               Just r  -> return r
               Nothing -> loop def'

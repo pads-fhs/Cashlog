@@ -105,6 +105,7 @@ readVoucherPositions handle key = do
         ask                = do
             putStr "Weiter (y/n): "
             a <- getChar
+            putStr "\n"
             case a of
               'y'       -> return $ True
               'n'       -> return $ False

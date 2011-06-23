@@ -268,7 +268,7 @@ insertVoucherPosition :: DataHandle
                       -> IO ()
 insertVoucherPosition handle (vouId, artId, quantity, price) = do
     DB.run handle
-           "INSERT INTO position VALUES(?, ?, ?. ?. ?)"
+           "INSERT INTO position VALUES(?, ?, ?, ?, ?)"
            params
     DB.commit handle
   where params = [ DB.SqlNull
@@ -285,7 +285,8 @@ prettySelectVoucherPositions handle vouKey = do
     result <- DB.quickQuery' handle
                              "SELECT a.name, p.quantity, p.price \
                              \FROM article a, position p \
-                             \WHERE p.id = ? AND p.article_id = a.id"
+                             \WHERE p.voucher_id = ? \
+                             \AND p.article_id = a.id"
                              [DB.toSql vouKey]
     return $ map (\(artName:posQuantity:posPrice:[]) -> ( DB.fromSql artName
                                                         , DB.fromSql posQuantity
