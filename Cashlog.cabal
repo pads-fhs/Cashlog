@@ -4,7 +4,7 @@ Synopsis:            SWEv3 Projekt
 License:             GPLv2
 License-file:        LICENSE
 Author:              Daniel Priebe
-Maintainer:          ob@obraun.net
+Maintainer:          priebe@stud.fh-sm.de
 Category:            Misc
 Build-type:          Simple
 Cabal-version:       >=1.2
