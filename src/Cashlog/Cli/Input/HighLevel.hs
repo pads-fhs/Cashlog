@@ -40,6 +40,16 @@ readShopKey handle msg def = readKey msg
                                      (mapShopKeyToCompletion handle)
                                      (mapShopCompletionToKey handle)
                                      (isShopKey handle)
+readVoucherKey :: DataHandle
+               -> String
+               -> Maybe Int
+               -> IO Int
+readVoucherKey handle msg def = readKey msg
+                                        def
+                                        (voucherCompletion handle)
+                                        (mapVoucherKeyToCompletion handle)
+                                        (mapVoucherCompletionToKey handle)
+                                        (isVoucherKey handle)
 
 readArticle :: DataHandle
             -> Maybe Article
@@ -80,4 +90,23 @@ readVoucherPosition handle vouKey = do
     quantity <- readValue "Menge" (Just 1.0)
     price    <- readValue "Preis" (Just $ (artPrice * quantity))
     return (vouKey, artKey, quantity, price)
+
+readVoucherPositions :: DataHandle
+                     -> Int
+                     -> IO [VoucherPositionSkeleton]
+readVoucherPositions handle key = do
+    readHelper []
+  where readHelper vouList = do
+            vou <- readVoucherPosition handle key
+            ans <- ask
+            case ans of
+              True  -> readHelper $ vou:vouList
+              False -> return     $ vou:vouList
+        ask                = do
+            putStr "Weiter (y/n): "
+            a <- getChar
+            case a of
+              'y'       -> return $ True
+              'n'       -> return $ False
+              otherwise -> ask
 

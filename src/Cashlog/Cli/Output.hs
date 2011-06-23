@@ -10,31 +10,31 @@ printArticles :: DataHandle
               -> IO ()
 printArticles handle = do
     articles <- prettySelectArticles handle
-    printf "%s | %s | %s" "Bezeichnung" "Vorgabepreis" "Kategorie"
-    mapM_ (\(name, price, catName) -> printf "%s | %d | %s" name price catName)
+    printf "%24s | %24s | %24s\n" "Bezeichnung" "Vorgabepreis" "Kategorie"
+    mapM_ (\(name, price, catName) -> printf "%24s | %24.2f | %24s\n" name price catName)
           articles
 
 printCategories :: DataHandle
                 -> IO ()
 printCategories handle = do
     categories <- prettySelectCategories handle
-    printf "%s | %s" "Nummer" "Bezeichnung"
-    mapM_ (\(id, name) -> printf "%d | %s" id name) categories
+    printf "%24s | %24s\n" "Nummer" "Bezeichnung"
+    mapM_ (\(id, name) -> printf "%24.2f | %24s\n" id name) categories
 
 printShops :: DataHandle
            -> IO ()
 printShops handle = do
     shops <- prettySelectShops handle
-    printf "%s | %s" "Geschäft" "Ort"
-    mapM_ (\(name, city) -> printf "%s | %s" name city) shops
+    printf "%24s | %24s\n" "Geschäft" "Ort"
+    mapM_ (\(name, city) -> printf "%24s | %24s\n" name city) shops
 
 printVouchers :: DataHandle
               -> String
               -> IO ()
 printVouchers handle date = do
     vouchers <- prettySelectVouchers handle dateFormat date
-    printf "%s | %s" "Datum / Zeit" "Geschäft"
-    mapM_ (\(timestamp, shopName) -> printf "%s | %s" timestamp shopName)
+    printf "%24s | %s24\n" "Datum / Zeit" "Geschäft"
+    mapM_ (\(timestamp, shopName) -> printf "%24s | %24s\n" timestamp shopName)
           vouchers
 
 printVoucherPositions :: DataHandle
@@ -43,11 +43,12 @@ printVoucherPositions :: DataHandle
 printVoucherPositions handle key = do
     positions <- prettySelectVoucherPositions handle key
     let sumPrices = foldl (\a (_, _, p) -> a + p) 0 positions
-    printf "%s | %s | %s" "Artikel" "Menge" "Preis"
-    mapM_ (\(artName, posQuantity, posPrice) -> printf "%s | %d | %d"
-                                                       artName
-                                                       posQuantity
-                                                       posPrice)
+    printf "%24s | %24s | %24s\n" "Artikel" "Menge" "Preis"
+    mapM_ (\(artName, posQuantity, posPrice) -> 
+              printf "%24s | %24.2f | %24.2f\n"
+                     artName
+                     posQuantity
+                     posPrice)
           positions
     putStrLn ("Gesamtpreis: " ++ (show sumPrices))
 

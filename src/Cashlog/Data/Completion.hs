@@ -2,15 +2,19 @@ module Cashlog.Data.Completion
     ( articleCompletion
     , categoryCompletion
     , shopCompletion
+    , voucherCompletion
     , mapArticleCompletionToKey
     , mapArticleKeyToCompletion
     , mapCategoryCompletionToKey
     , mapCategoryKeyToCompletion
     , mapShopCompletionToKey
     , mapShopKeyToCompletion
+    , mapVoucherCompletionToKey
+    , mapVoucherKeyToCompletion
     , isArticleKey
     , isCategoryKey
     , isShopKey
+    , isVoucherKey
     ) where
 
 import qualified Database.HDBC                       as DB
@@ -141,8 +145,58 @@ mapShopKeyToCompletion handle key = do
                              \FROM shop \
                              \WHERE id = ?"
                              params
-    return $ justTopLeft result
+    case result of
+      ((name:city:[]):[]) -> return $ Just
+                                    $ wrapPair (DB.fromSql name)
+                                               (DB.fromSql city)
+      otherwise           -> return Nothing
   where params = [ DB.toSql key ]
+
+completeVoucher :: DataHandle
+                -> String
+                -> IO [(String)]
+completeVoucher handle ts = do
+    let (t,n) = unwrapPair ts
+    result <- DB.quickQuery' handle
+                             ( "SELECT v.timestamp, s.name \
+                               \FROM voucher v, shop s \
+                               \WHERE v.shop_id = s.id \
+                               \AND v.timestamp LIKE '" ++ t ++ "%' \
+                               \AND s.name LIKE '" ++ n ++ "%'" )
+                             []
+    return $ map (\(t:n:[]) -> wrapPair (DB.fromSql t) (DB.fromSql n)) result
+
+mapVoucherCompletionToKey :: DataHandle
+                          -> String
+                          -> IO (Maybe Int)
+mapVoucherCompletionToKey handle comp = do
+    let (t,n) = unwrapPair comp
+        (t',n') = (DB.toSql t, DB.toSql n)
+    result <- DB.quickQuery' handle
+                             "SELECT v.id \
+                             \FROM voucher v, shop s \
+                             \WHERE v.shop_id = s.id \
+                             \AND v.timestamp = ? \
+                             \AND s.name = ?"
+                             [t', n']
+    return $ justTopLeft result
+
+mapVoucherKeyToCompletion :: DataHandle
+                       -> Int
+                       -> IO (Maybe String)
+mapVoucherKeyToCompletion handle key = do
+    result <- DB.quickQuery' handle
+                             "SELECT v.timestamp, s.name \
+                             \FROM voucher v, shop s \
+                             \WHERE v.shop_id = s.id \
+                             \AND v.id = ?"
+                             params
+    case result of
+      ((timestamp:name:[]):[]) -> return $ Just
+                                         $ wrapPair (DB.fromSql timestamp)
+                                                    (DB.fromSql name)
+  where params = [ DB.toSql key ]
+
 
 commonPrefix :: [String]
              -> String
@@ -171,4 +225,5 @@ simpleWordCompletion fcomp word = do
 articleCompletion handle  = simpleWordCompletion (completeArticle handle)
 categoryCompletion handle = simpleWordCompletion (completeCategory handle)
 shopCompletion handle     = simpleWordCompletion (completeShop handle)
+voucherCompletion handle  = simpleWordCompletion (completeVoucher handle)
 

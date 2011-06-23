@@ -12,7 +12,7 @@ city        TEXT NOT NULL
 
 CREATE TABLE article (
 id          INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-name        TEXT NOT NULL,
+name        TEXT UNIQUE NOT NULL,
 price       REAL NOT NULL,
 category_id INTEGER NOT NULL
 	CONSTRAINT fk_article_category REFERENCES category(id)
@@ -22,6 +22,7 @@ CREATE TABLE voucher (
 id          INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
 timestamp   TEXT NOT NULL,
 shop_id     INTEGER NOT NULL
+	CONSTRAINT fk_voucher_shop REFERENCES category(id)
 );
 
 CREATE TABLE position (
@@ -36,6 +37,7 @@ price       REAL NOT NULL
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS index_shop ON shop (name, city);
+CREATE UNIQUE INDEX IF NOT EXISTS index_voucher ON voucher (timestamp, shop_id);
 
 -- Foreign Key Preventing insert
 CREATE TRIGGER fki_article_category_id_category_id
@@ -59,6 +61,30 @@ BEFORE DELETE ON category
 FOR EACH ROW BEGIN
   SELECT RAISE(ROLLBACK, 'delete on table "category" violates foreign key constraint "fkd_article_category_id_category_id"')
   WHERE (SELECT category_id FROM article WHERE category_id = OLD.id) IS NOT NULL;
+END;
+
+-- Foreign Key Preventing insert
+CREATE TRIGGER fki_voucher_shop_id_category_id
+BEFORE INSERT ON [voucher]
+FOR EACH ROW BEGIN
+  SELECT RAISE(ROLLBACK, 'insert on table "voucher" violates foreign key constraint "fki_voucher_shop_id_category_id"')
+  WHERE (SELECT id FROM category WHERE id = NEW.shop_id) IS NULL;
+END;
+
+-- Foreign key preventing update
+CREATE TRIGGER fku_voucher_shop_id_category_id
+BEFORE UPDATE ON [voucher] 
+FOR EACH ROW BEGIN
+    SELECT RAISE(ROLLBACK, 'update on table "voucher" violates foreign key constraint "fku_voucher_shop_id_category_id"')
+      WHERE (SELECT id FROM category WHERE id = NEW.shop_id) IS NULL;
+END;
+
+-- Foreign key preventing delete
+CREATE TRIGGER fkd_voucher_shop_id_category_id
+BEFORE DELETE ON category
+FOR EACH ROW BEGIN
+  SELECT RAISE(ROLLBACK, 'delete on table "category" violates foreign key constraint "fkd_voucher_shop_id_category_id"')
+  WHERE (SELECT shop_id FROM voucher WHERE shop_id = OLD.id) IS NOT NULL;
 END;
 
 -- Foreign Key Preventing insert

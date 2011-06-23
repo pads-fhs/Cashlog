@@ -127,6 +127,19 @@ deleteCategory handle key = do
            [DB.toSql key]
     DB.commit handle
 
+selectCategory :: DataHandle
+               -> Int
+               -> IO (Maybe Category)
+selectCategory handle key = do
+    result <- DB.quickQuery' handle
+                             "SELECT * from category WHERE id = ?"
+                             [DB.toSql key]
+    case result of
+      ((id:parent:name:[]):[]) -> return $ Just $ Category (DB.fromSql id)
+                                                           (DB.fromSql parent)
+                                                           (DB.fromSql name)
+      otherwise                     -> return Nothing
+
 prettySelectCategories :: DataHandle
                        -> IO [(Int, String)]
 prettySelectCategories handle = do
@@ -178,6 +191,19 @@ deleteShop handle key = do
            [DB.toSql key]
     DB.commit handle
 
+selectShop :: DataHandle
+           -> Int
+           -> IO (Maybe Shop)
+selectShop handle key = do
+    result <- DB.quickQuery' handle
+                             "SELECT * from shop WHERE id = ?"
+                             [DB.toSql key]
+    case result of
+      ((id:name:city:[]):[]) -> return $ Just $ Shop (DB.fromSql id)
+                                                     (DB.fromSql name)
+                                                     (DB.fromSql city)
+      otherwise                     -> return Nothing
+
 prettySelectShops :: DataHandle
                   -> IO [(String, String)]
 prettySelectShops handle = do
@@ -195,16 +221,26 @@ prettySelectShops handle = do
 
 insertVoucher :: DataHandle
               -> VoucherSkeleton
-              -> IO ()
+              -> IO Int
 insertVoucher handle (timestamp, shopId) = do
+    id <- nextid
+    let params = [ DB.toSql id
+                 , DB.toSql timestamp
+                 , DB.toSql shopId
+                 ]
     DB.run handle 
            "INSERT INTO voucher VALUES(?, ?, ?)"
            params
     DB.commit handle
-  where params = [ DB.SqlNull
-                 , DB.toSql timestamp
-                 , DB.toSql shopId
-                 ]
+    return id
+  where nextid :: IO Int
+        nextid = do result <- DB.quickQuery' handle 
+                                            "SELECT max(id) FROM voucher"
+                                            []
+                    case justTopLeft result of
+                      Just i  -> return (i + 1)
+                      Nothing -> return 1
+                   
 
 prettySelectVouchers :: DataHandle
                      -> String

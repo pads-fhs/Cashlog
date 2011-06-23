@@ -3,6 +3,7 @@ module Cashlog.Cli.Input.LowLevel
     , readDateTime
     , readValue
     , readKey
+    , readDate
     ) where
 
 import Control.Exception
