@@ -1,7 +1,7 @@
 Quickstart:
 
-Create an empty database:
-cat cashlog.sql | sqlite3 cashlog.db
+Create an example database:
+./mkdb.sh
 
 Run Cashlog:
-./cashlog cashlog.db
+./cashlog

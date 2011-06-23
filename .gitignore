@@ -1,0 +1,4 @@
+*.db
+*.hs
+*.o
+CashlogCli
