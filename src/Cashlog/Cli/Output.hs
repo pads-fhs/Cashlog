@@ -21,7 +21,7 @@ printCategories handle = do
     categories <- prettySelectCategories handle
     printf "%24s | %24s\n" "Nummer" "Bezeichnung"
     putStrLn $ replicate 80 '-'
-    mapM_ (\(id, name) -> printf "%24.2f | %24s\n" id name) categories
+    mapM_ (\(id, name) -> printf "%24d | %24s\n" id name) categories
 
 printShops :: DataHandle
            -> IO ()
