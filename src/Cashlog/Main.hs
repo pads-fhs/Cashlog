@@ -80,8 +80,8 @@ subMenu = do
     c <- getChar
     putStr "\n"
     if elem c "ablpq"
-    then return c
-    else subMenu
+     then return c
+     else subMenu
 
 subMenu' :: IO Char
 subMenu' = do
@@ -94,5 +94,5 @@ subMenu' = do
     c <- getChar
     putStr "\n"
     if elem c "apq"
-    then return c
-    else subMenu
+     then return c
+     else subMenu

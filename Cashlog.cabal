@@ -1,7 +1,7 @@
 Name:                Cashlog
 Version:             0.1
 Synopsis:            SWEv3 Projekt
-License:             GPLv2
+License:             GPL-2
 License-file:        LICENSE
 Author:              Daniel Priebe
 Maintainer:          priebe@stud.fh-sm.de
@@ -10,13 +10,14 @@ Build-type:          Simple
 Cabal-version:       >=1.2
 Description:         SWEv3 Projekt
 
-Executable moviestore
+Executable cashlog
   hs-source-dirs:    src
-  Main-is:           Main.hs
+  Main-is:           Cashlog/Main.hs
   Build-depends:     base >= 4.3.1.0,
                      haskeline >= 0.6.4.0,
-                     hdbc >= 2.2.7.0,
-                     hdbc-sqlite3 >= 2.3.1.0
+                     HDBC >= 2.2.7.0,
+                     HDBC-sqlite3 >= 2.3.1.0,
+                     convertible, old-locale, time
 
   ghc-options: -O2 -Wall -fhpc -fwarn-tabs -funbox-strict-fields -threaded
                -fno-warn-unused-do-bind
